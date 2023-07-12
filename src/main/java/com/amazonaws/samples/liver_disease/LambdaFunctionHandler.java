@@ -96,20 +96,11 @@ public class LambdaFunctionHandler implements RequestHandler<APIGatewayProxyRequ
 
     private JSONObject getEventData(APIGatewayProxyRequestEvent event, Context context) {
         context.getLogger().log("Event body is " + event.getBody());
-        JSONParser parser = new JSONParser();
-        JSONObject jsonObject;
-        try {
-            Object parsedObject = parser.parse(event.getBody());
-            if (parsedObject instanceof JSONObject) {
-                jsonObject = (JSONObject) parsedObject;
-            } else {
-                return null;
-            }
-        } catch (org.json.simple.parser.ParseException e) {
-            throw new RuntimeException(e);
-        }
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("body", event.getBody());
         return jsonObject;
     }
+
 
     private JSONObject getInference(JSONObject request, Context context) {
         context.getLogger().log("Getting SageMaker inference to predict liver disease");
