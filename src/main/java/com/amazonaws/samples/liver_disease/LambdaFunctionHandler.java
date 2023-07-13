@@ -1,8 +1,7 @@
 package com.amazonaws.samples.liver_disease;
 
-import org.json.simple.JSONObject;
-import org.json.simple.JSONArray;
-import org.json.simple.parser.JSONParser;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.sagemakerruntime.SageMakerRuntimeClient;
@@ -13,11 +12,12 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import software.amazon.awssdk.services.sagemakerruntime.model.InvokeEndpointRequest;
 import software.amazon.awssdk.services.sagemakerruntime.model.InvokeEndpointResponse;
 
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Vector;
+import java.util.ArrayList;
 
 
 public class LambdaFunctionHandler implements RequestHandler<APIGatewayProxyRequestEvent, ApiGatewayResponse> {
@@ -33,9 +33,6 @@ public class LambdaFunctionHandler implements RequestHandler<APIGatewayProxyRequ
     // Instantiate client
     SageMakerRuntimeClientBuilder builder = SageMakerRuntimeClient.builder();
     SageMakerRuntimeClient sageMakerRuntime = builder.build();
-
-    public LambdaFunctionHandler() {
-    }
 
     @Override
     public ApiGatewayResponse handleRequest(APIGatewayProxyRequestEvent event, Context context) {
@@ -57,7 +54,7 @@ public class LambdaFunctionHandler implements RequestHandler<APIGatewayProxyRequ
 
             if (response != null) {
                 context.getLogger().log("Inference response data : " + response);
-                JSONArray predictions = (JSONArray) response.get("predictions");
+                JSONArray predictions =  response.getJSONArray("predictions");
                 Iterator<?> iter = predictions.iterator();
                 while (iter.hasNext()) {
                     JSONObject prediction = (JSONObject) iter.next();
@@ -66,9 +63,12 @@ public class LambdaFunctionHandler implements RequestHandler<APIGatewayProxyRequ
                     prediction_label = (int) prediction.get("predicted_label");
 
                     // get the prediction score
-                    score = (Double) prediction.get("score");
+                    BigDecimal scoreValue = (BigDecimal) prediction.get("score");
+                    score = scoreValue.doubleValue();
+
                     context.getLogger().log("Received prediction for liver disease with value of " + prediction_label);
                     context.getLogger().log("Prediction confidence level: " + score);
+
                 }
             }
         }
@@ -87,7 +87,7 @@ public class LambdaFunctionHandler implements RequestHandler<APIGatewayProxyRequ
             JSONArray instances = new JSONArray();
             JSONObject features = new JSONObject();
             features.put(FEATURES, featuresList);
-            instances.add(features);
+            instances.put(features);
             data.put(INSTANCES, instances);
             return data;
         }
@@ -96,8 +96,7 @@ public class LambdaFunctionHandler implements RequestHandler<APIGatewayProxyRequ
 
     private JSONObject getEventData(APIGatewayProxyRequestEvent event, Context context) {
         context.getLogger().log("Event body is " + event.getBody());
-        JSONObject jsonObject = new JSONObject();
-        jsonObject.put("body", event.getBody());
+        JSONObject jsonObject = new JSONObject(event.getBody());
         return jsonObject;
     }
 
@@ -107,26 +106,22 @@ public class LambdaFunctionHandler implements RequestHandler<APIGatewayProxyRequ
 
         InvokeEndpointRequest invokeEndpointRequest = InvokeEndpointRequest.builder()
                 .contentType("application/json")
-                .body(SdkBytes.fromByteBuffer(SdkBytes.fromUtf8String(request.toString()).asByteBuffer()))
+                .body(SdkBytes.fromUtf8String(request.toString()))
                 .endpointName(SAGEMAKER_ENDPOINT)
                 .build();
 
-        InvokeEndpointResponse result = sageMakerRuntime.invokeEndpoint(invokeEndpointRequest);
+        InvokeEndpointResponse response = sageMakerRuntime.invokeEndpoint(invokeEndpointRequest);
 
-        String body = StandardCharsets.UTF_8.decode(result.body().asByteBuffer()).toString();
+        String body = StandardCharsets.UTF_8.decode(response.body().asByteBuffer()).toString();
 
-        JSONObject jsonResponse;
-        try {
-            jsonResponse = (JSONObject) new JSONParser().parse(body);
-        } catch (org.json.simple.parser.ParseException e) {
-            throw new RuntimeException(e);
-        }
+        JSONObject jsonResponse = new JSONObject(body);
 
         return jsonResponse;
     }
 
+
     private List<Object> buildFeatures(JSONObject jsonObject) {
-        List<Object> features = new Vector<Object>();
+        List<Object> features = new ArrayList<>();
         if (jsonObject != null) {
             features.add(jsonObject.get("age"));
             features.add(jsonObject.get("gender"));
@@ -141,4 +136,5 @@ public class LambdaFunctionHandler implements RequestHandler<APIGatewayProxyRequ
         }
         return features;
     }
+
 }
