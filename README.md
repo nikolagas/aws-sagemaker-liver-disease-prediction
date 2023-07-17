@@ -15,7 +15,7 @@ The project utilizes the ["Indian Liver Patient Records"](https://archive.ics.uc
 ### Architecture
 The architecture of the application follows a serverless design, leveraging AWS services for efficient and scalable deployment. It consists of the following components:
 
-1. API Gateway: It serves as the entry point for the application, receiving incoming HTTP requests from clients. It provides a RESTful API interface that allows clients to interact with the application.
+1. API Gateway: It serves as the entry point for the application, receiving incoming HTTP POST requests from clients. It provides a RESTful API interface that allows clients to interact with the application.
 
 2. Lambda Function: It acts as the core processing unit of the application. When API Gateway receives a request, it triggers the Lambda function, which executes the business logic of the application. The Lambda function performs data processing, invokes the SageMaker service for making predictions on liver disease, and returns the inference to the API Gateway.
 
