@@ -21,3 +21,4 @@ The architecture of the application follows a serverless design, leveraging AWS 
 
 3. SageMaker: It is the machine learning service provided by AWS. A suitable algorithm, such as the AWS Linear Learner was trained using the Indian Liver Patient Records dataset. Once trained, the model was deployed and hosted in SageMaker. The Lambda function interacts with SageMaker to request predictions based on the input data provided.
 
+![architecture](src/main/resources/images/architecture.png)
